@@ -107,20 +107,20 @@ class ProphetForecaster:
             logger.error(f"Error training model for {parameter}: {e}")
             return None
     
-    def forecast(self, model: Prophet, days_ahead: int = FORECAST_DAYS) -> pd.DataFrame:
+    def forecast(self, model: Prophet, days_ahead: int = 8) -> pd.DataFrame:
         """
         Generate forecast using trained model (FUTURE dates only)
         
         Args:
             model: Trained Prophet model
-            days_ahead: Number of days to forecast into the future
+            days_ahead: Number of days to forecast into the future (default: 8)
             
         Returns:
             DataFrame with forecast for FUTURE dates only
         """
         try:
-            # Create future dataframe
-            future = model.make_future_dataframe(periods=days_ahead)
+            # Create future dataframe for next N days
+            future = model.make_future_dataframe(periods=days_ahead, freq='D')
             
             # Generate forecast
             forecast = model.predict(future)
@@ -129,11 +129,17 @@ class ProphetForecaster:
             forecast = forecast[['ds', 'yhat', 'yhat_lower', 'yhat_upper']]
             forecast.columns = ['date', 'predicted_value', 'lower_bound', 'upper_bound']
             
-            # IMPORTANT: Only keep FUTURE predictions (dates after today)
-            today = pd.Timestamp(datetime.now().date())
+            # IMPORTANT: Only keep FUTURE predictions (tomorrow onwards)
+            # Use date() for comparison to avoid timezone issues
+            today = datetime.now().date()
+            forecast['date'] = pd.to_datetime(forecast['date']).dt.date
             forecast = forecast[forecast['date'] > today].copy()
+            forecast['date'] = pd.to_datetime(forecast['date'])  # Convert back to datetime
             
-            logger.info(f"Forecast range: {forecast['date'].min()} to {forecast['date'].max()}")
+            if not forecast.empty:
+                logger.info(f"Forecast range: {forecast['date'].min().date()} to {forecast['date'].max().date()}")
+            else:
+                logger.warning("Forecast is empty after filtering for future dates")
             
             # Ensure non-negative values
             forecast['predicted_value'] = forecast['predicted_value'].clip(lower=0)
@@ -148,7 +154,7 @@ class ProphetForecaster:
     
     def forecast_pollutant(self, historical_data: pd.DataFrame, 
                           parameter: str, 
-                          days_ahead: int = FORECAST_DAYS) -> pd.DataFrame:
+                          days_ahead: int = 8) -> pd.DataFrame:
         """
         Train and forecast for a specific pollutant
         
@@ -180,7 +186,7 @@ class ProphetForecaster:
         return forecast
     
     def forecast_all_pollutants(self, city: str, historical_data: pd.DataFrame,
-                               days_ahead: int = FORECAST_DAYS) -> Dict[str, pd.DataFrame]:
+                               days_ahead: int = 8) -> Dict[str, pd.DataFrame]:
         """
         Forecast all available pollutants for a city
         

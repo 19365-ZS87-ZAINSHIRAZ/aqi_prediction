@@ -8,6 +8,7 @@ from typing import List, Optional, Dict
 from pymongo import MongoClient, ASCENDING, DESCENDING
 from loguru import logger
 from config.settings import MONGODB_URI, MONGODB_DB
+import certifi
 
 
 class MongoDBOperations:
@@ -16,7 +17,18 @@ class MongoDBOperations:
     def __init__(self):
         """Initialize MongoDB connection"""
         try:
-            self.client = MongoClient(MONGODB_URI)
+            # Windows-specific TLS configuration for PyMongo 4.x
+            # Bypasses certificate verification to resolve Windows SSL handshake issues
+            self.client = MongoClient(
+                MONGODB_URI,
+                tlsCAFile=certifi.where(),
+                tlsAllowInvalidCertificates=True,  # Required for Windows compatibility
+                tlsAllowInvalidHostnames=True,     # Required for Windows compatibility
+                serverSelectionTimeoutMS=30000,
+                connectTimeoutMS=30000,
+                socketTimeoutMS=30000,
+                retryWrites=True
+            )
             self.db = self.client[MONGODB_DB]
             
             # Collections

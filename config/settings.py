@@ -157,7 +157,7 @@ for directory in [RAW_DATA_DIR, PROCESSED_DATA_DIR, CACHE_DIR, MODELS_DIR, LOGS_
     directory.mkdir(parents=True, exist_ok=True)
 
 # Forecasting Configuration
-FORECAST_DAYS = 7
+FORECAST_DAYS = 8  # Predict next 8 days
 FORECAST_MODELS = ['prophet', 'arima', 'lstm']
 
 # Health Impact Factors

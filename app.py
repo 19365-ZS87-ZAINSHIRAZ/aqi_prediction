@@ -139,9 +139,12 @@ def check_and_fill_data_gaps():
             'coverage': coverage
         }
         
-        # Auto-fill small gaps (up to 7 days)
-        if missing and len(missing) <= 7:
+        # AUTOMATIC GAP FILLING: Auto-fill gaps up to 30 days
+        if missing and len(missing) <= 30:
             try:
+                from src.analysis.aqi_calculator import AQICalculator
+                from src.analysis.health_impact import HealthImpactAssessor
+                
                 base_params = {
                     'pm25': {'Islamabad': 45, 'Rawalpindi': 50, 'Karachi': 65},
                     'pm10': {'Islamabad': 80, 'Rawalpindi': 85, 'Karachi': 110},
@@ -183,8 +186,8 @@ def check_and_fill_data_gaps():
                             'value': round(value, 2),
                             'unit': unit,
                             'timestamp': datetime.combine(missing_date, datetime.min.time()),
-                            'source': 'Auto-filled',
-                            'location': f'{city} (Gap-filled)',
+                            'source': 'Gap-filled',
+                            'location': f'{city} (Estimated)',
                             'latitude': MONITORED_CITIES[city]['lat'],
                             'longitude': MONITORED_CITIES[city]['lon']
                         })
@@ -221,8 +224,8 @@ def check_and_fill_data_gaps():
                 gap_stats[city]['coverage'] = 100.0
                 
             except Exception as e:
-                # If auto-fill fails, just continue
-                pass
+                # If auto-fill fails, log but continue
+                st.warning(f"Auto-fill failed for {city}: {str(e)}")
     
     return gap_stats
 
@@ -440,10 +443,21 @@ if page == "🏠 Dashboard":
             )
         
         with col4:
+            # Get timestamp from database for last update time
+            last_update_time = datetime.now().strftime("%H:%M")
+            if aqi_info.get('timestamp'):
+                last_update_time = pd.to_datetime(aqi_info['timestamp']).strftime("%H:%M")
+            
             st.metric(
                 label="Last Updated",
-                value=datetime.now().strftime("%H:%M")
+                value=last_update_time
             )
+        
+        # Show data source and freshness
+        if aqi_info.get('timestamp'):
+            data_age = datetime.now() - pd.to_datetime(aqi_info['timestamp'])
+            if data_age.total_seconds() > 3600:  # More than 1 hour old
+                st.warning(f"⚠️ Data is {int(data_age.total_seconds() / 3600)} hours old. Click 'Refresh' or run `python scripts/fetch_data.py` for latest data.")
         
         st.markdown("---")
         
@@ -498,6 +512,12 @@ if page == "🏠 Dashboard":
             display_df = display_df[['parameter', 'value', 'unit', 'location', 'timestamp']].copy()
             display_df['timestamp'] = pd.to_datetime(display_df['timestamp']).dt.strftime('%Y-%m-%d %H:%M')
             
+            # Convert numeric columns to proper types to avoid Arrow serialization errors
+            display_df['value'] = pd.to_numeric(display_df['value'], errors='coerce')
+            display_df['parameter'] = display_df['parameter'].astype(str)
+            display_df['unit'] = display_df['unit'].astype(str)
+            display_df['location'] = display_df['location'].astype(str)
+            
             st.dataframe(display_df, use_container_width=True, hide_index=True)
         else:
             st.info("No measurements available")
@@ -529,12 +549,12 @@ elif page == "📊 City Comparison":
         comparison_data = []
         for city, info in cities_aqi.items():
             comparison_data.append({
-                'City': city,
-                'AQI': info.get('aqi', 'N/A'),
-                'Category': info.get('category', 'Unknown'),
-                'Dominant Pollutant': info.get('dominant_pollutant', 'N/A').upper(),
-                'PM2.5': round(info.get('pm25', 0), 2) if info.get('pm25') else 'N/A',
-                'PM10': round(info.get('pm10', 0), 2) if info.get('pm10') else 'N/A'
+                'City': str(city),
+                'AQI': int(info.get('aqi', 0)) if info.get('aqi') else None,
+                'Category': str(info.get('category', 'Unknown')),
+                'Dominant Pollutant': str(info.get('dominant_pollutant', 'N/A')).upper(),
+                'PM2.5': float(info.get('pm25', 0)) if info.get('pm25') else None,
+                'PM10': float(info.get('pm10', 0)) if info.get('pm10') else None
             })
         
         comp_df = pd.DataFrame(comparison_data)
@@ -617,7 +637,7 @@ elif page == "📈 Forecasting":
                         name='Predicted (Future)',
                         line=dict(color='#F77F00', width=3, dash='dash'),
                         marker=dict(size=8),
-                        hovertemplate='<b>Forecast</b><br>Date: %{x}<br>AQI: %{y}<extra></extra>'
+                        hovertemplate='<b>Predicted</b><br>Date: %{x}<br>AQI: %{y}<extra></extra>'
                     ))
                     
                     fig.update_layout(
@@ -668,7 +688,7 @@ elif page == "📈 Forecasting":
                             name='Forecast (Future)',
                             line=dict(color='#D62828', width=3, dash='dash'),
                             marker=dict(size=8),
-                            hovertemplate='<b>Forecast</b><br>Date: %{x}<br>Value: %{y:.2f}<extra></extra>'
+                            hovertemplate='<b>Predicted</b><br>Date: %{x}<br>Value: %{y:.2f}<extra></extra>'
                         ))
                         
                         # Confidence interval (shaded area)

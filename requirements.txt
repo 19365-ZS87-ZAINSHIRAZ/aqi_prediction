@@ -10,7 +10,9 @@ urllib3>=2.0.0
 # Database - v1 uses MongoDB only
 # sqlalchemy>=2.0.0  # For v2 (PostgreSQL support)
 # psycopg2-binary>=2.9.0  # For v2 (PostgreSQL support)
-pymongo>=4.0.0  # Primary database for v1
+pymongo[srv]>=4.6.0  # Primary database for v1 with SRV support
+certifi>=2024.0.0  # SSL/TLS certificates for MongoDB connections
+pyOpenSSL>=24.0.0  # Enhanced SSL/TLS support for Windows
 
 # Visualization
 plotly>=5.14.0
