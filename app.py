@@ -264,7 +264,7 @@ for city, stats in gap_stats.items():
         color = "🟢" if coverage >= 95 else "🟡" if coverage >= 80 else "🔴"
         
         st.sidebar.markdown(f"**{color} {city}**")
-        st.sidebar.progress(coverage / 100)
+        st.sidebar.progress(min(coverage / 100, 1.0))
         st.sidebar.caption(f"{stats['actual_days']}/{stats['total_days']} days ({coverage:.1f}%)")
         
         if stats['missing_count'] > 0:
