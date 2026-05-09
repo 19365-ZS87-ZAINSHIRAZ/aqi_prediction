@@ -8,6 +8,8 @@ requests>=2.31.0
 urllib3>=2.0.0
 
 # Database - v1 uses MongoDB only
+# sqlalchemy>=2.0.0  # For v2 (PostgreSQL support)
+# psycopg2-binary>=2.9.0  # For v2 (PostgreSQL support)
 pymongo[srv]>=4.6.0  # Primary database for v1 with SRV support
 certifi>=2024.0.0  # SSL/TLS certificates for MongoDB connections
 pyOpenSSL>=24.0.0  # Enhanced SSL/TLS support for Windows
@@ -16,6 +18,7 @@ pyOpenSSL>=24.0.0  # Enhanced SSL/TLS support for Windows
 plotly>=5.14.0
 matplotlib>=3.7.0
 seaborn>=0.12.0
+folium>=0.14.0
 
 # Machine Learning & Forecasting
 scikit-learn>=1.3.0
@@ -24,6 +27,8 @@ statsmodels>=0.14.0
 
 # Web Framework
 streamlit>=1.28.0
+flask>=2.3.0
+dash>=2.14.0
 
 # Data Validation
 pydantic>=2.0.0
@@ -31,6 +36,11 @@ pydantic>=2.0.0
 # Utilities
 python-dotenv>=1.0.0
 pytz>=2023.3
+geopy>=2.3.0
+
+# Alerts and Notifications - Disabled for v1, will be enabled in v2 (management version)
+# twilio>=8.0.0  # For v2 (SMS alerts)
+# sendgrid>=6.10.0  # For v2 (Email alerts)
 
 # Testing
 pytest>=7.4.0
