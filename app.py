@@ -412,6 +412,26 @@ st.markdown("""
         border-color: #667eea;
         box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
     }
+    
+    /* Hide Streamlit branding and footer */
+    #MainMenu {visibility: hidden;}
+    footer {visibility: hidden;}
+    header {visibility: hidden;}
+    
+    /* Hide "Made with Streamlit" footer */
+    .viewerBadge_container__1QSob {
+        display: none !important;
+    }
+    
+    /* Hide deploy button */
+    .styles_viewerBadge__1yB5_ {
+        display: none !important;
+    }
+    
+    /* Hide Streamlit footer watermark */
+    footer:after {
+        content: none !important;
+    }
 </style>
 """, unsafe_allow_html=True)
 
